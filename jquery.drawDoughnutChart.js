@@ -37,6 +37,7 @@
         ratioFont: 1.5,
         shortInt: false,
         tipClass: "doughnutTip",
+        summaryToDraw: "total",
         summaryClass: "doughnutSummary",
         summaryTitle: "TOTAL:",
         summaryTitleClass: "doughnutSummaryTitle",
@@ -123,7 +124,7 @@
         .on("mouseenter", pathMouseEnter)
         .on("mouseleave", pathMouseLeave)
         .on("mousemove", pathMouseMove)
-		.on("click", pathClick);
+    .on("click", pathClick);
     }
 
     //Animation start
@@ -162,19 +163,19 @@
             .fadeIn(200);
       }
       if(settings.showLabel) {
-		  $summaryTitle.text(data[order].title).css('font-size', getScaleFontSize( $summaryTitle, data[order].title));
+      $summaryTitle.text(data[order].title).css('font-size', getScaleFontSize( $summaryTitle, data[order].title));
           var tmpNumber = settings.shortInt ? shortKInt(data[order].value) : data[order].value;
-		  $summaryNumber.html(tmpNumber).css('font-size', getScaleFontSize( $summaryNumber, tmpNumber));
-	  }
+      $summaryNumber.html(tmpNumber).css('font-size', getScaleFontSize( $summaryNumber, tmpNumber));
+    }
       settings.onPathEnter.apply($(this),[e,data]);
     }
     function pathMouseLeave(e) {
       if (settings.showTip) $tip.hide();
       if(settings.showLabel) {
-		  $summaryTitle.text(settings.summaryTitle).css('font-size', getScaleFontSize( $summaryTitle, settings.summaryTitle));
+      $summaryTitle.text(settings.summaryTitle).css('font-size', getScaleFontSize( $summaryTitle, settings.summaryTitle));
           var tmpNumber = settings.shortInt ? shortKInt(segmentTotal) : segmentTotal;
-		  $summaryNumber.html(tmpNumber).css('font-size', getScaleFontSize( $summaryNumber, tmpNumber));
-	  }
+      $summaryNumber.html(tmpNumber).css('font-size', getScaleFontSize( $summaryNumber, tmpNumber));
+    }
       settings.onPathLeave.apply($(this),[e,data]);
     }
     function pathMouseMove(e) {
@@ -185,17 +186,18 @@
         });
       }
     }
-	function pathClick(e){
-	var order = $(this).data().order;
-	  if (typeof data[order].action != "undefined")
-		  data[order].action();
-	}
+  function pathClick(e){
+  var order = $(this).data().order;
+    if (typeof data[order].action != "undefined")
+      data[order].action();
+  }
     function drawPieSegments (animationDecimal) {
       var startRadius = -PI / 2,//-90 degree
           rotateAnimation = 1;
       if (settings.animation && settings.animateRotate) rotateAnimation = animationDecimal;//count up between0~1
 
-      drawDoughnutText(animationDecimal, segmentTotal);
+      var summaryToDraw = (settings.summaryToDraw !== 'total' && data[settings.summaryToDraw].value !== undefined) ? data[settings.summaryToDraw].value : segmentTotal;
+      drawDoughnutText(animationDecimal, summaryToDraw);
 
       $pathGroup.attr("opacity", animationDecimal);
 
@@ -227,12 +229,17 @@
         startRadius += segmentAngle;
       }
     }
-    function drawDoughnutText(animationDecimal, segmentTotal) {
+    function drawDoughnutText(animationDecimal, numberToDraw) {
+
+      var tmpNumber = (numberToDraw * animationDecimal).toFixed(settings.summaryDecimals),
+      currentNumber = settings.shortInt ? shortKInt(tmpNumber) : tmpNumber;
+
       $summaryNumber
-        .css({opacity: animationDecimal})
-        .text((segmentTotal * animationDecimal).toFixed(1));
-	  var tmpNumber = settings.shortInt ? shortKInt(segmentTotal) : segmentTotal;
-	  $summaryNumber.html(tmpNumber).css('font-size', getScaleFontSize( $summaryNumber, tmpNumber));
+      .css({
+        opacity: animationDecimal,
+        'font-size': getScaleFontSize( $summaryNumber, currentNumber)
+      })
+      .html(currentNumber);
     }
     function animateFrame(cnt, drawData) {
       var easeAdjustedAnimationPercent =(settings.animation)? CapValue(easingFunction(cnt), null, 0) : 1;
@@ -266,36 +273,36 @@
       return valueToCap;
     }
     function shortKInt (int) {
-		int = int.toString();
-		var strlen = int.length;
-		if(strlen<5)
-			return int;
-		if(strlen<8)
-			return '<span title="' +  int +  '">' + int.substring(0, strlen-3) + 'K</span>';
-		return '<span title="' + int  + '">' + int.substring( 0, strlen-6) + 'M</span>';
-	}
-	function getScaleFontSize(block, newText) {
-		block.css('font-size', '');
+    int = int.toString();
+    var strlen = int.length;
+    if(strlen<5)
+      return int;
+    if(strlen<8)
+      return '<span title="' +  int +  '">' + int.substring(0, strlen-3) + 'K</span>';
+    return '<span title="' + int  + '">' + int.substring( 0, strlen-6) + 'M</span>';
+  }
+  function getScaleFontSize(block, newText) {
+    block.css('font-size', '');
         newText = newText.toString().replace(/(<([^>]+)>)/ig,"");
-		var newFontSize = block.width() / newText.length * settings.ratioFont;
-		// Not very good : http://stephensite.net/WordPressSS/2008/02/19/how-to-calculate-the-character-width-accross-fonts-and-points/
-		// But best quick way the 1.5 number is to affinate in function of the police
-		var maxCharForDefaultFont = block.width() - newText.length * block.css('font-size').replace(/px/, '') / settings.ratioFont;
-		if(maxCharForDefaultFont<0)
-			return newFontSize+'px';
-		else
-			return '';
-	}
-	/**
-	function getScaleFontSize(block, newText) {
-		block.css('font-size', '');
+    var newFontSize = block.width() / newText.length * settings.ratioFont;
+    // Not very good : http://stephensite.net/WordPressSS/2008/02/19/how-to-calculate-the-character-width-accross-fonts-and-points/
+    // But best quick way the 1.5 number is to affinate in function of the police
+    var maxCharForDefaultFont = block.width() - newText.length * block.css('font-size').replace(/px/, '') / settings.ratioFont;
+    if(maxCharForDefaultFont<0)
+      return newFontSize+'px';
+    else
+      return '';
+  }
+  /**
+  function getScaleFontSize(block, newText) {
+    block.css('font-size', '');
         newText = newText.toString().replace(/(<([^>]+)>)/ig,"");
-		var newFontSize = block.width() / newText.length;
-		if(newFontSize<block.css('font-size').replace(/px/, ''))
-			return newFontSize+'px';
-		else
-			return '';
-	}*/
+    var newFontSize = block.width() / newText.length;
+    if(newFontSize<block.css('font-size').replace(/px/, ''))
+      return newFontSize+'px';
+    else
+      return '';
+  }*/
     return $this;
   };
 })(jQuery);
